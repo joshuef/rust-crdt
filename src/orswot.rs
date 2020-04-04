@@ -1,6 +1,6 @@
+use std::cmp::Ordering;
 /// Observed-Remove Set With Out Tombstones (ORSWOT), ported directly from `riak_dt`.
 use std::collections::{HashMap, HashSet};
-use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::iter::{once, FromIterator};
@@ -191,6 +191,11 @@ impl<M: Member, A: Actor> Orswot<M, A> {
             entries: HashMap::new(),
             deferred: HashMap::new(),
         }
+    }
+
+    /// Return a snapshot of the ORSWOT clock
+    pub fn clock(&self) -> VClock<A> {
+        self.clock.clone()
     }
 
     /// Add a single element.
