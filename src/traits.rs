@@ -1,6 +1,12 @@
-use std::fmt::Debug;
+use crate::VClock;
 
-use crate::vclock::{Actor, VClock};
+use std::fmt::Debug;
+use std::hash::Hash;
+
+/// Common Actor type. Actors are unique identifier for every `thing` mutating a VClock.
+/// VClock based CRDT's will need to expose this Actor type to the user.
+pub trait Actor: Ord + Clone + Hash + Debug {}
+impl<A: Ord + Clone + Hash + Debug> Actor for A {}
 
 /// State based CRDT's replicate by transmitting the entire CRDT state.
 pub trait CvRDT {

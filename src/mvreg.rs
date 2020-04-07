@@ -5,8 +5,7 @@ use std::mem;
 use serde::{Deserialize, Serialize};
 
 use crate::ctx::{AddCtx, ReadCtx};
-use crate::traits::{Causal, CmRDT, CvRDT};
-use crate::vclock::{Actor, VClock};
+use crate::{Actor, Causal, CmRDT, CvRDT, VClock};
 
 /// A Trait alias for the possible values MVReg's may hold
 pub trait Val: Debug + Clone {}
@@ -185,7 +184,7 @@ impl<V: Val, A: Actor> MVReg<V, A> {
 
     /// Consumes the register and returns the values
     pub fn read(&self) -> ReadCtx<Vec<V>, A> {
-        let clock = self.clock().clone();
+        let clock = self.clock();
         let concurrent_vals = self.vals.iter().cloned().map(|(_, v)| v).collect();
 
         ReadCtx {
@@ -197,7 +196,7 @@ impl<V: Val, A: Actor> MVReg<V, A> {
 
     /// Retrieve the current read context
     pub fn read_ctx(&self) -> ReadCtx<(), A> {
-        let clock = self.clock().clone();
+        let clock = self.clock();
         ReadCtx {
             add_clock: clock.clone(),
             rm_clock: clock,

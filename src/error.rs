@@ -20,6 +20,7 @@ impl error::Error for Error {
             Error::ConflictingMarker => "Dot's are used exactly once for the lifetime of a CRDT",
         }
     }
+
     fn cause(&self) -> Option<&dyn error::Error> {
         match self {
             Error::ConflictingMarker => None,
@@ -30,10 +31,7 @@ impl error::Error for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::ConflictingMarker => {
-                use std::error::Error;
-                write!(f, "{}", self.description())
-            }
+            Error::ConflictingMarker => write!(f, "{:?}", self),
         }
     }
 }

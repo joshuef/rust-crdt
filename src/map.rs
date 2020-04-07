@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Debug;
 use std::mem;
@@ -7,8 +7,7 @@ use std::mem;
 use serde::{Deserialize, Serialize};
 
 use crate::ctx::{AddCtx, ReadCtx, RmCtx};
-use crate::traits::{Causal, CmRDT, CvRDT};
-use crate::vclock::{Actor, Dot, VClock};
+use crate::{Actor, Causal, CmRDT, CvRDT, Dot, VClock};
 
 /// Key Trait alias to reduce redundancy in type decl.
 pub trait Key: Debug + Ord + Clone {}
@@ -288,7 +287,7 @@ impl<K: Key, V: Val<A>, A: Actor> Map<K, V, A> {
         keyset.insert(key.into());
         Op::Rm {
             clock: ctx.clock,
-            keyset: keyset,
+            keyset,
         }
     }
 
