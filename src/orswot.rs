@@ -1,6 +1,6 @@
 /// Observed-Remove Set With Out Tombstones (ORSWOT), ported directly from `riak_dt`.
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::hash::Hash;
 use std::mem;
 
@@ -11,16 +11,16 @@ use crate::quickcheck::{Arbitrary, Gen};
 use crate::{Actor, Causal, CmRDT, CvRDT, Dot, VClock};
 
 /// Trait bound alias for members in a set
-pub trait Member: Clone + Hash + Eq {}
-impl<T: Clone + Hash + Eq> Member for T {}
+pub trait Member: Clone + Hash + Eq + Ord {}
+impl<T: Clone + Hash + Eq + Ord> Member for T {}
 
 /// `Orswot` is an add-biased or-set without tombstones ported from
 /// the riak_dt CRDT library.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Orswot<M: Member, A: Actor> {
     pub(crate) clock: VClock<A>,
-    pub(crate) entries: HashMap<M, VClock<A>>,
-    pub(crate) deferred: HashMap<VClock<A>, HashSet<M>>,
+    pub(crate) entries: BTreeMap<M, VClock<A>>,
+    pub(crate) deferred: BTreeMap<VClock<A>, HashSet<M>>,
 }
 
 /// Op's define an edit to an Orswot, Op's must be replayed in the exact order
@@ -80,7 +80,7 @@ impl<M: Member, A: Actor> CmRDT for Orswot<M, A> {
 impl<M: Member, A: Actor> CvRDT for Orswot<M, A> {
     /// Merge combines another `Orswot` with this one.
     fn merge(&mut self, other: Self) {
-        self.entries = mem::replace(&mut self.entries, HashMap::new())
+        self.entries = mem::replace(&mut self.entries, BTreeMap::new())
             .into_iter()
             .filter_map(|(entry, mut clock)| {
                 if !other.entries.contains_key(&entry) {
@@ -186,8 +186,8 @@ impl<M: Member, A: Actor> Orswot<M, A> {
     pub fn new() -> Self {
         Orswot {
             clock: VClock::new(),
-            entries: HashMap::new(),
-            deferred: HashMap::new(),
+            entries: BTreeMap::new(),
+            deferred: BTreeMap::new(),
         }
     }
 
@@ -281,7 +281,7 @@ impl<M: Member, A: Actor> Orswot<M, A> {
     }
 
     fn apply_deferred(&mut self) {
-        let deferred = mem::replace(&mut self.deferred, HashMap::new());
+        let deferred = mem::replace(&mut self.deferred, BTreeMap::new());
         for (clock, entries) in deferred.into_iter() {
             self.apply_rm(entries, clock)
         }
