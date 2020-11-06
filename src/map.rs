@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::collections::{BTreeMap, BTreeSet};
 use std::mem;
 
@@ -27,16 +26,16 @@ where
 ///
 /// See examples/reset_remove.rs for an example of reset-remove semantics
 /// in action.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash, Eq, Serialize, Deserialize)]
 pub struct Map<K: Ord, V: Val<A>, A: Actor> {
     // This clock stores the current version of the Map, it should
     // be greator or equal to all Entry.clock's in the Map.
     clock: VClock<A>,
     entries: BTreeMap<K, Entry<V, A>>,
-    deferred: HashMap<VClock<A>, BTreeSet<K>>,
+    deferred: BTreeMap<VClock<A>, BTreeSet<K>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Hash, PartialOrd, Eq, Serialize, Deserialize)]
 struct Entry<V: Val<A>, A: Actor> {
     // The entry clock tells us which actors edited this entry.
     clock: VClock<A>,
@@ -46,7 +45,7 @@ struct Entry<V: Val<A>, A: Actor> {
 }
 
 /// Operations which can be applied to the Map CRDT
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialOrd, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Op<K: Ord, V: Val<A>, A: Actor> {
     /// Remove a key from the map
     Rm {
@@ -96,7 +95,7 @@ impl<K: Ord, V: Val<A> + Default, A: Actor> Causal<A> for Map<K, V, A> {
             })
             .collect();
 
-        self.deferred = mem::replace(&mut self.deferred, HashMap::new())
+        self.deferred = mem::replace(&mut self.deferred, BTreeMap::new())
             .into_iter()
             .filter_map(|(mut rm_clock, key)| {
                 rm_clock.forget(&clock);
@@ -224,7 +223,7 @@ impl<K: Ord, V: Val<A> + Default, A: Actor> Map<K, V, A> {
         Self {
             clock: VClock::new(),
             entries: BTreeMap::new(),
-            deferred: HashMap::new(),
+            deferred: BTreeMap::new(),
         }
     }
 
@@ -307,7 +306,7 @@ impl<K: Ord, V: Val<A> + Default, A: Actor> Map<K, V, A> {
 
     /// apply the pending deferred removes
     fn apply_deferred(&mut self) {
-        let deferred = mem::replace(&mut self.deferred, HashMap::new());
+        let deferred = mem::replace(&mut self.deferred, BTreeMap::new());
         for (clock, keys) in deferred {
             self.apply_keyset_rm(keys, clock);
         }
@@ -562,7 +561,7 @@ mod test {
         let mut m1: Map<u8, Orswot<u8, u8>, u8> = Map {
             clock: VClock::from(Dot::new(75, 1)),
             entries: BTreeMap::new(),
-            deferred: HashMap::new(),
+            deferred: BTreeMap::new(),
         };
 
         let mut m2: Map<u8, Orswot<u8, u8>, u8> = Map {
@@ -579,13 +578,13 @@ mod test {
                         ]
                         .into_iter()
                         .collect(),
-                        deferred: HashMap::new(),
+                        deferred: BTreeMap::new(),
                     },
                 },
             )]
             .into_iter()
             .collect(),
-            deferred: HashMap::new(),
+            deferred: BTreeMap::new(),
         };
 
         m1.merge(m2.clone());
@@ -603,13 +602,13 @@ mod test {
                             entries: vec![(2, VClock::from(Dot::new(93, 1)))]
                                 .into_iter()
                                 .collect(),
-                            deferred: HashMap::new()
+                            deferred: BTreeMap::new()
                         }
                     }
                 )]
                 .into_iter()
                 .collect(),
-                deferred: HashMap::new()
+                deferred: BTreeMap::new()
             }
         );
 

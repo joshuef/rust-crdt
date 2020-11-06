@@ -28,13 +28,13 @@ use crate::{Actor, Causal, CmRDT, CvRDT, VClock};
 /// // Since "bob" and "alice" were added concurrently, we see both on read
 /// assert_eq!(r1.read().val, vec!["bob", "alice"]);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct MVReg<V, A: Actor> {
     vals: Vec<(VClock<A>, V)>,
 }
 
 /// Defines the set of operations over the MVReg
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, PartialOrd, Eq, Serialize, Deserialize)]
 pub enum Op<V, A: Actor> {
     /// Put a value
     Put {
